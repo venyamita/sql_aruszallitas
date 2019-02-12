@@ -1,0 +1,130 @@
+/*tábla létrehozása*/
+
+create table Termék(
+	gyarto varchar(10),
+	ár integer,
+	név varchar(10),
+    származás varchar(10)
+	);
+	
+/*tábla feltöltése*/
+insert into Termék values ('inc',100,'cipo','észak');
+insert into Termék values ('inc',200,'keksz','dél');
+insert into Termék values ('inc',50,'fánk','kelet');
+insert into Termék values ('rt',150,'nadrág','nyugat');
+insert into Termék values ('rt',120,'pizza','dél');
+insert into Termék values ('kft',70,'zokni','nyugat');
+insert into Termék values ('kft',30,'cukor','kelet');
+insert into Termék values ('kft',10,'sapka','kelet');
+insert into Termék values ('bt',1000,'kabát','dél');
+insert into Termék values ('bt',800,'darálthus','észak');
+    
+/*tábla létrehozása*/  
+create table Raktár(
+	hely varchar(10),
+	alap_terület integer,
+	kapacitás integer,
+    készlet varchar(10),
+    ellát varchar(10)
+	);
+	
+/*tábla feltöltése*/
+insert into "RAKTÁR" values ('észak',100,1000,'sapka','asd');
+insert into "RAKTÁR" values ('dél',50,8000,'kabát','www');
+insert into "RAKTÁR" values ('kelet',1000,10000,'cukor','acac');
+insert into "RAKTÁR" values ('észak',500,15000,'cipo','asd');
+insert into "RAKTÁR" values ('nyugat',400,1000,'zokni','asd');
+insert into "RAKTÁR" values ('nyugat',700,10100,'pizza','rtz');
+insert into "RAKTÁR" values ('kelet',10,100,'darálthus','acac');
+insert into "RAKTÁR" values ('dél',140,1200,'nadrág','www');
+insert into "RAKTÁR" values ('észak',80,8000,'fánk','asd');
+insert into "RAKTÁR" values ('kelet',900,5000,'keksz','acac');
+    
+/*tábla létrehozása*/    
+create table Áruház(
+	nyitvatartás varchar(10),
+	alkalmazotak_száma integer,
+	név varchar(10),
+    hely varchar(10)
+	);
+	
+/*tábla feltöltése*/
+insert into "ÁRUHÁZ" values ('0-24',20,'asd','észak');
+insert into "ÁRUHÁZ" values ('6-20',2,'www','dél');
+insert into "ÁRUHÁZ" values ('10-24',20,'rtz','kelet');
+insert into "ÁRUHÁZ" values ('4-18',20,'acac','nyugat');
+
+COMMIT; 
+
+/*engedélyek kiosztása*/
+-- GRANT SELECT ON Termék TO PUBLIC;
+-- GRANT SELECT ON Raktár TO PUBLIC;
+-- GRANT SELECT ON Áruház TO PUBLIC;
+
+
+
+/*összes tábla lekérdezése*/
+select * 
+from termék;
+select * 
+from raktár;
+select * 
+from áruház;
+
+/*termékek ÁFA-jának a lekérdezése*/
+select név,ár,(ár/100*27) 
+from Termék;
+
+/*raktárból mit hova szállítanak*/
+select készlet,ellát 
+from raktár;
+
+/*azok a raktáron lévo elemek amikbol több van mint 500*/
+select készlet,kapacitás 
+from raktár
+where kapacitás>500;
+
+/*azok a termékek amelyek északról vagy keletrol származnak és 100 egységbe kerülnek legfeljebb*/
+select név,származás,ár 
+from termék
+where ár<=100 and származás='észak' 
+or ár<=100 and származás='kelet';
+
+/*azok a termékek amelyek nevében szerepel "a" betü*/
+select név 
+from termék
+where név like '%a%';
+
+/*raktárak leltárának az elkészítése*/
+SELECT 'Raktáron van a(z) '||UPPER(hely)||' raktárban ' ||kapacitás||' '
+||LOWER(készlet) AS "Leltár"
+FROM raktár;
+
+/*raktárak területére ha 100 egységet lefedo padloburkolatokkal kell lefedni akkor mennyi plusz anyagot kell vásárolni az ezek alól kilogó területekre*/
+select hely, alap_terület, mod(alap_terület,100)
+from raktár;
+
+/*termék adók kiszámolása különbözo gyártók esetén*/
+SELECT név, gyarto, ár,
+ CASE gyarto WHEN 'inc' THEN 1*ár
+ WHEN 'rt' THEN 1.5*ár
+WHEN 'bt' THEN 2.5*ár
+WHEN 'kft' THEN 2*ár
+else ár end "termék adók"
+FROM termék;
+
+/*termékek szállításának a nyomon követése, melyik raktárból hova szállítanak*/
+with eljut (hely, ellát) as
+                   (select hely, ellát from raktár
+               union all
+                    select raktár.hely, eljut.ellát 
+                    from raktár, eljut 
+                    where raktár.ellát=eljut.hely
+                    )
+                SEARCH DEPTH FIRST BY hely SET SORTING
+                CYCLE hely SET is_cycle TO 1 DEFAULT 0
+            select distinct hely, ellát from eljut order by hely;
+  
+
+
+
